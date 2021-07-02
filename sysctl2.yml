@@ -1,0 +1,11 @@
+---
+- hosts: all
+  become: true
+  tasks:
+    - name: set kernel 
+      sysctl:
+        name: vm.swappiness
+        value: '10'
+        state: present
+      when: "ansible_memtotal_mb < 2048"
+

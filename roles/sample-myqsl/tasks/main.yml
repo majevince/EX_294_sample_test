@@ -1,0 +1,80 @@
+---
+# tasks file for sample-myqsl
+    - name: "create a partition /dev/sdb"
+      parted:
+        device: /dev/sdb
+        number: 1
+        flags: [ lvm ]
+        state: present
+        part_end: 800MiB
+
+    - name: " cretae a volumn group vg_database"
+      lvg:
+        vg: vg_database
+        pvs: /dev/sdb1
+        state: present
+
+    - name: " create a logical volunm  lv_mysql"
+      lvol:
+        vg: vg_database
+        lv: lv_mysql
+        size: 512m
+
+
+    - name: "create a file system"
+      filesystem:
+        fstype: xfs
+        dev: /dev/vg_database/lv_mysql
+
+
+    - name: "create a mount directory"
+      file:
+        path: /mnt/mysql_backups
+        state: directory
+
+    - name: "mount the file "
+      mount:
+        path: /mnt/mysql_backups
+        src: /dev/vg_database/lv_mysql
+        fstype: xfs
+        state: mounted
+
+    - name: " install mysql packages and dependencies"
+      yum:
+        name:
+          - mysql-server
+          - python3-PyMySQL
+
+    - name: "start and enable mysql"
+      systemd:
+        name: mysqld
+        state: started
+        enabled: yes
+
+    - name: "ensure firewallsd is started and enabled"
+      systemd:
+        name: firewalld
+        state: started
+        enabled: yes
+
+    - name: "open firewald port 3306 for mysql"
+      firewalld:
+        port: 3306/tcp
+        immediate: yes
+        state: enabled
+        permanent: yes
+
+
+    - name: " set password for user root on mysql"
+      mysql_user:
+        name: root
+        password: "{{database_password}}"
+        priv: '*.*:ALL'
+        state: present
+
+    - name: "modify mysql configs"
+      template:
+        src: templates/my.cnf.j2
+        dest: /etc/my.cnf
+      notify: restart mysql
+

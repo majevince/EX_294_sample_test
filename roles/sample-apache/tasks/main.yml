@@ -1,0 +1,40 @@
+---
+# tasks file for sample-apache
+- name: install apache and all dependencies
+  yum:
+    name:
+      - httpd
+      - mod_ssl
+      - php
+    state: present
+
+- name: ensure apache is stated and enabled
+  systemd:
+    name: httpd
+    state: started
+    enabled: yes
+
+- name: ensure firewalld is started and eanbled 
+  systemd:
+    name: firewalld
+    state: started
+    enabled: yes
+
+- name: allow hhtp ports 443 and 80
+  firewalld:
+    port: "{{item}}"
+    permanent: yes
+    immediate: yes
+    state: enabled
+  loop:
+    - 443/tcp
+    - 80/tcp
+
+    
+
+- name: configure apache web page 
+  template:
+    src: templates/index.html.j2
+    dest: /var/www/html/index.html
+  notify: restart apache
+  

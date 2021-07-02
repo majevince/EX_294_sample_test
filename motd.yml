@@ -1,0 +1,21 @@
+---
+- hosts: all
+  become: true
+  tasks:
+    - name: “ copy content Welcome to HAProxy server to proxy group”
+      copy:
+        content: 'Welcome to HAProxy server'
+        dest: /etc/motd
+      when: inventory_hostname in groups['proxy']
+
+    - name: “ copy content Welcome to Apache server to webserver group”
+      copy:
+        content: 'Welcome to Apache server'
+        dest: /etc/motd
+      when: inventory_hostname in groups['webservers']
+
+    - name: “ copy content Welcome to database server to proxy server”
+      copy:
+        content: 'Welcome to database server'
+        dest: /etc/motd
+      when: inventory_hostname in groups['database']
